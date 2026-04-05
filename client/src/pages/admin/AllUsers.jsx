@@ -10,7 +10,7 @@ const AllUsers = () => {
   const getUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/user/getAllUsers?searchTerm=${search}`);
+      const res = await fetch(`https://rgtours.onrender.com/api/user/getAllUsers?searchTerm=${search}`);
       const data = await res.json();
 
       if (data && data?.success === false) {
@@ -37,8 +37,9 @@ const AllUsers = () => {
     if (CONFIRM) {
       setLoading(true);
       try {
-        const res = await fetch(`/api/user/delete-user/${userId}`, {
+        const res = await fetch(`https://rgtours.onrender.com/api/user/delete-user/${userId}`, {
           method: "DELETE",
+          credentials: "include",
         });
         const data = await res.json();
         if (data?.success === false) {

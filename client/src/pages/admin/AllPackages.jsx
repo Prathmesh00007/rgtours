@@ -14,12 +14,12 @@ const AllPackages = () => {
       setLoading(true);
       let url =
         filter === "offer" //offer
-          ? `/api/package/get-packages?searchTerm=${search}&offer=true`
+          ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&offer=true`
           : filter === "latest" //latest
-          ? `/api/package/get-packages?searchTerm=${search}&sort=createdAt`
+          ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=createdAt`
           : filter === "top" //top rated
-          ? `/api/package/get-packages?searchTerm=${search}&sort=packageRating`
-          : `/api/package/get-packages?searchTerm=${search}`; //all
+          ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=packageRating`
+          : `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}`; //all
       const res = await fetch(url);
       const data = await res.json();
       if (data?.success) {
@@ -44,12 +44,12 @@ const AllPackages = () => {
     const startIndex = numberOfPackages;
     let url =
       filter === "offer" //offer
-        ? `/api/package/get-packages?searchTerm=${search}&offer=true&startIndex=${startIndex}`
+        ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&offer=true&startIndex=${startIndex}`
         : filter === "latest" //latest
-        ? `/api/package/get-packages?searchTerm=${search}&sort=createdAt&startIndex=${startIndex}`
+        ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=createdAt&startIndex=${startIndex}`
         : filter === "top" //top rated
-        ? `/api/package/get-packages?searchTerm=${search}&sort=packageRating&startIndex=${startIndex}`
-        : `/api/package/get-packages?searchTerm=${search}&startIndex=${startIndex}`; //all
+        ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=packageRating&startIndex=${startIndex}`
+        : `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&startIndex=${startIndex}`; //all
     const res = await fetch(url);
     const data = await res.json();
     if (data?.packages?.length < 9) {
@@ -65,7 +65,7 @@ const AllPackages = () => {
   const handleDelete = async (packageId) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/package/delete-package/${packageId}`, {
+      const res = await fetch(`https://rgtours.onrender.com/api/package/delete-package/${packageId}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -167,7 +167,8 @@ const AllPackages = () => {
                     </p>
                     <div className="flex items-center gap-4 text-sm">
                       <span className="font-bold text-travel-success">
-                        ${pack?.packagePrice}
+                        ₹
+                        {Number(pack?.packagePrice).toLocaleString("en-IN")}
                       </span>
                       {pack?.packageOffer && (
                         <span className="px-2 py-1 bg-travel-accent text-white rounded text-xs font-bold">

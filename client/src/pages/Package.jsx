@@ -63,7 +63,7 @@ const Package = () => {
   const getPackageData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/package/get-package-data/${params?.id}`);
+      const res = await fetch(`https://rgtours.onrender.com/api/package/get-package-data/${params?.id}`);
       const data = await res.json();
       if (data?.success) {
         setPackageData({
@@ -113,7 +113,7 @@ const Package = () => {
     }
     try {
       setLoading(true);
-      const res = await fetch("/api/rating/give-rating", {
+      const res = await fetch("https://rgtours.onrender.com/api/rating/give-rating", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,7 +138,7 @@ const Package = () => {
 
   const getRatings = async () => {
     try {
-      const res = await fetch(`/api/rating/get-ratings/${params.id}/4`);
+      const res = await fetch(`https://rgtours.onrender.com/api/rating/get-ratings/${params.id}/4`);
       const data = await res.json();
       if (data) {
         setPackageRatings(data);
@@ -153,7 +153,7 @@ const Package = () => {
   const checkRatingGiven = async () => {
     try {
       const res = await fetch(
-        `/api/rating/rating-given/${currentUser?._id}/${params?.id}`
+        `https://rgtours.onrender.com/api/rating/rating-given/${currentUser?._id}/${params?.id}`
       );
       const data = await res.json();
       setRatingGiven(data?.given);
@@ -465,10 +465,16 @@ const Package = () => {
                       <div className="mt-2 space-y-2">
                         <div className="flex flex-wrap items-baseline gap-3">
                           <span className="font-display text-4xl font-bold">
-                            ${packageData?.packageDiscountPrice}
+                            ₹
+                            {Number(
+                              packageData?.packageDiscountPrice
+                            ).toLocaleString("en-IN")}
                           </span>
                           <span className="text-lg text-white/70 line-through">
-                            ${packageData?.packagePrice}
+                            ₹
+                            {Number(packageData?.packagePrice).toLocaleString(
+                              "en-IN"
+                            )}
                           </span>
                         </div>
                         <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-bold">
@@ -483,7 +489,10 @@ const Package = () => {
                       </div>
                     ) : (
                       <p className="font-display mt-2 text-4xl font-bold">
-                        ${packageData?.packagePrice}
+                        ₹
+                        {Number(packageData?.packagePrice).toLocaleString(
+                          "en-IN"
+                        )}
                       </p>
                     )}
                     <p className="mt-2 text-sm text-white/85">per person</p>

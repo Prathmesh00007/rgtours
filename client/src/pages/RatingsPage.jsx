@@ -15,9 +15,9 @@ const RatingsPage = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `/api/rating/get-ratings/${params.id}/999999999999`
+        `https://rgtours.onrender.com/api/rating/get-ratings/${params.id}/999999999999`
       );
-      const res2 = await fetch(`/api/rating/average-rating/${params.id}`);
+      const res2 = await fetch(`https://rgtours.onrender.com/api/rating/average-rating/${params.id}`);
       const data = await res.json();
       const data2 = await res2.json();
       if (data && data2) {

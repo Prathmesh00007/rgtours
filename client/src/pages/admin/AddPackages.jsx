@@ -112,7 +112,7 @@ const AddPackages = () => {
       setLoading(true);
       setError(false);
 
-      const res = await fetch("/api/package/create-package", {
+      const res = await fetch("https://rgtours.onrender.com/api/package/create-package", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -290,7 +290,7 @@ const AddPackages = () => {
 
           <div>
             <label htmlFor="packagePrice" className={labelClass}>
-              Price (USD)
+              Price (INR)
             </label>
             <input
               type="number"
@@ -322,7 +322,7 @@ const AddPackages = () => {
             }`}
           >
             <label htmlFor="packageDiscountPrice" className={labelClass}>
-              Discount price
+              Discount price (INR)
             </label>
             <input
               type="number"

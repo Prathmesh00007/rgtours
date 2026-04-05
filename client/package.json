@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "proxy": "http://localhost:8000",
+  "proxy": "https://rgtours.onrender.com",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -16,7 +16,6 @@
     "@mui/material": "^5.15.5",
     "@reduxjs/toolkit": "^2.0.1",
     "axios": "^1.6.4",
-    "braintree-web-drop-in-react": "^1.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",

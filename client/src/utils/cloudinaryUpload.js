@@ -11,7 +11,7 @@ export function uploadImageWithProgress(file, { folder = "packages", onProgress 
     formData.append("folder", folder);
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/upload/image");
+    xhr.open("POST", "https://rgtours.onrender.com/api/upload/image");
     xhr.withCredentials = true;
 
     xhr.upload.onprogress = (e) => {

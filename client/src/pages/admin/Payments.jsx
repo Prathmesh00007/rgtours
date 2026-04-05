@@ -11,7 +11,7 @@ const Payments = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `/api/booking/get-allBookings?searchTerm=${search}`
+        `https://rgtours.onrender.com/api/booking/get-allBookings?searchTerm=${search}`
       );
       const data = await res.json();
       if (data?.success) {
@@ -49,10 +49,10 @@ const Payments = () => {
 
       <div className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-sky-900 to-cyan-800 p-8 text-white shadow-card-lg">
         <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-white/70">
-          Total revenue
+          Total revenue (INR)
         </h3>
         <p className="font-display mt-2 text-4xl font-bold">
-          ${totalRevenue.toLocaleString()}
+          ₹{totalRevenue.toLocaleString("en-IN")}
         </p>
       </div>
 
@@ -125,7 +125,10 @@ const Payments = () => {
                     <td className="px-6 py-4 text-sm text-gray-600">{booking?.buyer?.email}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{booking?.date}</td>
                     <td className="px-6 py-4 text-right">
-                      <span className="font-bold text-travel-success text-lg">${booking?.totalPrice}</span>
+                      <span className="font-bold text-travel-success text-lg">
+                        ₹
+                        {Number(booking?.totalPrice).toLocaleString("en-IN")}
+                      </span>
                     </td>
                   </tr>
                 ))}

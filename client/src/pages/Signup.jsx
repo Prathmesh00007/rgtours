@@ -23,7 +23,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`/api/auth/signup`, formData);
+      const res = await axios.post(`https://rgtours.onrender.com/api/auth/signup`, formData);
       if (res?.data?.success) {
         alert(res?.data?.message);
         navigate("/login");

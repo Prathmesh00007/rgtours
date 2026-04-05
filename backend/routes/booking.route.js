@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import {
   bookPackage,
   cancelBooking,
+  createRazorpayOrder,
   deleteBookingHistory,
   getAllBookings,
   getAllUserBookings,
@@ -12,7 +13,10 @@ import { requireSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// book package
+// Razorpay: create order before checkout
+router.post("/razorpay/create-order", requireSignIn, createRazorpayOrder);
+
+// book package (after successful Razorpay payment)
 router.post("/book-package/:packageId", requireSignIn, bookPackage);
 
 //get all current bookings admin

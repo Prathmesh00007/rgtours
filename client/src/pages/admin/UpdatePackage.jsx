@@ -34,7 +34,7 @@ const UpdatePackage = () => {
 
   const getPackageData = async () => {
     try {
-      const res = await fetch(`/api/package/get-package-data/${params?.id}`);
+      const res = await fetch(`https://rgtours.onrender.com/api/package/get-package-data/${params?.id}`);
       const data = await res.json();
       if (data?.success) {
         setFormData({
@@ -149,7 +149,7 @@ const UpdatePackage = () => {
       setLoading(true);
       setError(false);
 
-      const res = await fetch(`/api/package/update-package/${params?.id}`, {
+      const res = await fetch(`https://rgtours.onrender.com/api/package/update-package/${params?.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -316,7 +316,7 @@ const UpdatePackage = () => {
 
             <div>
               <label htmlFor="packagePrice" className={labelClass}>
-                Price (USD)
+                Price (INR)
               </label>
               <input
                 type="number"
@@ -348,7 +348,7 @@ const UpdatePackage = () => {
               }`}
             >
               <label htmlFor="packageDiscountPrice" className={labelClass}>
-                Discount price
+                Discount price (INR)
               </label>
               <input
                 type="number"

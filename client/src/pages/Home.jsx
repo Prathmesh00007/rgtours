@@ -18,7 +18,7 @@ const Home = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        "/api/package/get-packages?sort=packageRating&limit=8"
+        "https://rgtours.onrender.com/api/package/get-packages?sort=packageRating&limit=8"
       );
       const data = await res.json();
       if (data?.success) {
@@ -37,7 +37,7 @@ const Home = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        "/api/package/get-packages?sort=createdAt&limit=8"
+        "https://rgtours.onrender.com/api/package/get-packages?sort=createdAt&limit=8"
       );
       const data = await res.json();
       if (data?.success) {
@@ -56,7 +56,7 @@ const Home = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        "/api/package/get-packages?sort=createdAt&offer=true&limit=6"
+        "https://rgtours.onrender.com/api/package/get-packages?sort=createdAt&offer=true&limit=6"
       );
       const data = await res.json();
       if (data?.success) {

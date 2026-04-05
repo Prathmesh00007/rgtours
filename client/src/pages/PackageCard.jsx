@@ -76,10 +76,14 @@ const PackageCard = ({ packageData }) => {
             {packageData.offer && packageData.packageDiscountPrice ? (
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-display text-2xl font-bold text-emerald-600">
-                  ${packageData.packageDiscountPrice}
+                  ₹
+                  {Number(packageData.packageDiscountPrice).toLocaleString(
+                    "en-IN"
+                  )}
                 </span>
                 <span className="text-sm text-slate-400 line-through">
-                  ${packageData.packagePrice}
+                  ₹
+                  {Number(packageData.packagePrice).toLocaleString("en-IN")}
                 </span>
                 <span className="ml-auto text-xs font-semibold uppercase tracking-wide text-travel-primary">
                   per person
@@ -88,7 +92,8 @@ const PackageCard = ({ packageData }) => {
             ) : (
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-display text-2xl font-bold text-emerald-600">
-                  ${packageData.packagePrice}
+                  ₹
+                  {Number(packageData.packagePrice).toLocaleString("en-IN")}
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                   per person

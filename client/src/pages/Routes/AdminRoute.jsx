@@ -8,7 +8,7 @@ export default function AdminRoute() {
   const [ok, setOk] = useState(false);
 
   const authCheck = async () => {
-    const res = await fetch("/api/user/admin-auth", {
+    const res = await fetch("https://rgtours.onrender.com/api/user/admin-auth", {
       method: "GET",
       headers: {
         Accept: "application/json",

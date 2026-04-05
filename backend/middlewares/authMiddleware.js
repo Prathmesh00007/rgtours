@@ -30,10 +30,15 @@ export const requireSignIn = async (req, res, next) => {
 
 //Admin access
 export const isAdmin = async (req, res, next) => {
-  // console.log(req.user.id);
   try {
+    if (!req.user?.id) {
+      return res.status(401).send({
+        success: false,
+        message: "Unauthorized Access",
+      });
+    }
     const user = await User.findById(req.user.id);
-    if (user.user_role === 1) {
+    if (user && user.user_role === 1) {
       next();
     } else {
       return res.status(401).send({

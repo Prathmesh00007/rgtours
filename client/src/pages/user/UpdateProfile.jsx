@@ -67,7 +67,7 @@ const UpdateProfile = () => {
     }
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+      const res = await fetch(`https://rgtours.onrender.com/api/user/update/${currentUser._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,7 +109,7 @@ const UpdateProfile = () => {
     }
     try {
       dispatch(updatePassStart());
-      const res = await fetch(`/api/user/update-password/${currentUser._id}`, {
+      const res = await fetch(`https://rgtours.onrender.com/api/user/update-password/${currentUser._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

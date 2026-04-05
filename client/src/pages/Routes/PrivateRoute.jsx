@@ -8,7 +8,7 @@ export default function PrivateRoute() {
   const [ok, setOk] = useState(false);
 
   const authCheck = async () => {
-    const res = await fetch("/api/user/user-auth", {
+    const res = await fetch("https://rgtours.onrender.com/api/user/user-auth", {
       method: "GET",
       headers: {
         Accept: "application/json",

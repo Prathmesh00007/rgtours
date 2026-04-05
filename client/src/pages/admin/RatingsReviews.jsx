@@ -15,8 +15,8 @@ const RatingsReviews = () => {
       setLoading(true);
       let url =
         filter === "most" //most rated
-          ? `/api/package/get-packages?searchTerm=${search}&sort=packageTotalRatings`
-          : `/api/package/get-packages?searchTerm=${search}&sort=packageRating`; //all
+          ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=packageTotalRatings`
+          : `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=packageRating`; //all
       const res = await fetch(url);
       const data = await res.json();
       if (data?.success) {
@@ -45,8 +45,8 @@ const RatingsReviews = () => {
     const startIndex = numberOfPackages;
     let url =
       filter === "most" //most rated
-        ? `/api/package/get-packages?searchTerm=${search}&sort=packageTotalRatings&startIndex=${startIndex}`
-        : `/api/package/get-packages?searchTerm=${search}&sort=packageRating&startIndex=${startIndex}`; //all
+        ? `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=packageTotalRatings&startIndex=${startIndex}`
+        : `https://rgtours.onrender.com/api/package/get-packages?searchTerm=${search}&sort=packageRating&startIndex=${startIndex}`; //all
     const res = await fetch(url);
     const data = await res.json();
     if (data?.packages?.length < 9) {

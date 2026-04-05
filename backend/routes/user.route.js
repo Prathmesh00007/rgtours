@@ -40,6 +40,8 @@ router.get("/getAllUsers", getAllUsers);
 //admin delete user accounts
 router.delete(
   "/delete-user/:id",
+  requireSignIn,
+  isAdmin,
   deleteUserAccountAdmin
 );
 

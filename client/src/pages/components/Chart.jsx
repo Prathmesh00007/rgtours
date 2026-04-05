@@ -27,7 +27,10 @@ export default function Chart({ data }) {
                   {props.payload?.map((item, index) => (
                     <div key={index} className="space-y-1">
                       <p className="font-bold text-travel-dark">
-                        Price: <span className="text-travel-success">${item.value}</span>
+                        Price (INR):{" "}
+                        <span className="text-travel-success">
+                          ₹{Number(item.value).toLocaleString("en-IN")}
+                        </span>
                       </p>
                       <p className="text-sm text-gray-600">Date: {item.payload.date}</p>
                     </div>

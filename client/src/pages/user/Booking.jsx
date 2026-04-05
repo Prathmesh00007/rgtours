@@ -1,9 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { FaClock, FaMapMarkerAlt } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
-import DropIn from "braintree-web-drop-in-react";
-import axios from "axios";
+
+const API = "/api";
+
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 const Booking = () => {
   const { currentUser } = useSelector((state) => state.user);
@@ -35,15 +49,13 @@ const Booking = () => {
     persons: 1,
     date: null,
   });
-  const [clientToken, setClientToken] = useState("");
-  const [instance, setInstance] = useState("");
   const [currentDate, setCurrentDate] = useState("");
 
   const getPackageData = async () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `/api/package/get-package-data/${params?.packageId}`
+        `${API}/package/get-package-data/${params?.packageId}`
       );
       const data = await res.json();
       if (data?.success) {
@@ -69,85 +81,152 @@ const Booking = () => {
         setError(data?.message || "Something went wrong!");
         setLoading(false);
       }
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
     }
   };
 
-  //get paymentgateway token
-  const getToken = async () => {
-    try {
-      const { data } = await axios.get(`/api/package/braintree/token`);
-      setClientToken(data?.clientToken);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  useEffect(() => {
-    getToken();
-  }, [currentUser]);
-
-  //handle payment & book package
-  const handleBookPackage = async () => {
+  const handleBookPackage = useCallback(async () => {
     if (
-      bookingData.packageDetails === "" ||
-      bookingData.buyer === "" ||
+      !bookingData.packageDetails ||
+      !bookingData.buyer ||
       bookingData.totalPrice <= 0 ||
       bookingData.persons <= 0 ||
-      bookingData.date === ""
+      !bookingData.date
     ) {
       alert("All fields are required!");
       return;
     }
+
+    const scriptOk = await loadRazorpayScript();
+    if (!scriptOk || !window.Razorpay) {
+      alert("Could not load payment gateway. Check your connection and try again.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch(`/api/booking/book-package/${params?.packageId}`, {
+      const orderRes = await fetch(`${API}/booking/razorpay/create-order`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bookingData),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          packageId: params?.packageId,
+          persons: bookingData.persons,
+        }),
       });
-      const data = await res.json();
-      if (data?.success) {
+      const orderData = await orderRes.json();
+      if (!orderData?.success || !orderData.orderId || !orderData.keyId) {
         setLoading(false);
-        alert(data?.message);
-        navigate(`/profile/${currentUser?.user_role === 1 ? "admin" : "user"}`);
-      } else {
-        setLoading(false);
-        alert(data?.message);
+        alert(orderData?.message || "Could not start payment.");
+        return;
       }
-    } catch (error) {
-      console.log(error);
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || "INR",
+        name: "Travel & Tourism",
+        description: packageData.packageName || "Package booking",
+        order_id: orderData.orderId,
+        prefill: {
+          name: currentUser?.username || "",
+          email: currentUser?.email || "",
+          contact: currentUser?.phone || "",
+        },
+        theme: { color: "#0ea5e9" },
+        handler: async function (response) {
+          try {
+            const res = await fetch(
+              `${API}/booking/book-package/${params?.packageId}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  packageDetails: bookingData.packageDetails,
+                  buyer: bookingData.buyer,
+                  persons: bookingData.persons,
+                  date: bookingData.date,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              }
+            );
+            const data = await res.json();
+            if (data?.success) {
+              alert(data?.message);
+              navigate(
+                `/profile/${currentUser?.user_role === 1 ? "admin" : "user"}`
+              );
+            } else {
+              alert(data?.message || "Booking failed.");
+            }
+          } catch (e) {
+            console.log(e);
+            alert("Booking failed after payment. Contact support with your payment ID.");
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function () {
+        setLoading(false);
+        alert("Payment failed. You can try again.");
+      });
+      rzp.open();
+    } catch (err) {
+      console.log(err);
       setLoading(false);
+      alert("Something went wrong. Try again.");
     }
-  };
+  }, [
+    bookingData,
+    params?.packageId,
+    packageData.packageName,
+    currentUser,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (params?.packageId) {
       getPackageData();
     }
-    let date = new Date().toISOString().substring(0, 10);
-    let d = date.substring(0, 8) + (parseInt(date.substring(8)) + 1);
+    const date = new Date().toISOString().substring(0, 10);
+    const d = date.substring(0, 8) + (parseInt(date.substring(8), 10) + 1);
     setCurrentDate(d);
   }, [params?.packageId]);
 
   useEffect(() => {
     if (packageData && params?.packageId) {
-      setBookingData({
-        ...bookingData,
+      setBookingData((prev) => ({
+        ...prev,
         packageDetails: params?.packageId,
         buyer: currentUser?._id,
-        totalPrice: packageData?.packageDiscountPrice
-          ? packageData?.packageDiscountPrice * bookingData?.persons
-          : packageData?.packagePrice * bookingData?.persons,
-      });
+        totalPrice: packageData?.packageOffer && packageData?.packageDiscountPrice
+          ? packageData.packageDiscountPrice * prev.persons
+          : packageData.packagePrice * prev.persons,
+      }));
     }
-  }, [packageData, params]);
+  }, [packageData, params?.packageId, currentUser?._id]);
+
+  const unitPrice =
+    packageData.packageOffer && packageData.packageDiscountPrice != null
+      ? Number(packageData.packageDiscountPrice)
+      : Number(packageData.packagePrice);
 
   const fieldRead =
     "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600";
-  const label = "mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500";
+  const label =
+    "mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500";
 
   return (
     <div className="min-h-screen bg-mesh-light px-4 py-12 md:py-16">
@@ -161,11 +240,16 @@ const Booking = () => {
               Book your package
             </h1>
             <p className="mt-2 text-sm text-white/85">
-              Confirm traveler details and secure your spot
+              Pay securely with Razorpay (INR)
             </p>
           </div>
-          
+
           <div className="p-6 md:p-10">
+            {error && (
+              <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                {error}
+              </p>
+            )}
             <div className="grid gap-10 md:grid-cols-2 md:gap-12">
               <div className="space-y-6">
                 <h2 className="font-display border-b border-slate-100 pb-3 text-xl font-bold text-travel-ink">
@@ -224,27 +308,27 @@ const Booking = () => {
                 </div>
               </div>
 
-              {/* Package Info Section */}
               <div className="space-y-6">
                 <h2 className="font-display border-b border-slate-100 pb-3 text-xl font-bold text-travel-ink">
                   Trip summary
                 </h2>
                 <div className="mb-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                  <div className="flex gap-4 mb-4">
+                  <div className="mb-4 flex gap-4">
                     <img
-                      className="w-24 h-24 rounded-lg object-cover"
+                      className="h-24 w-24 rounded-lg object-cover"
                       src={packageData.packageImages?.[0]}
                       alt="Package"
                     />
                     <div className="flex-1">
-                      <p className="font-bold text-lg capitalize text-travel-dark mb-1">
+                      <p className="mb-1 text-lg font-bold capitalize text-travel-dark">
                         {packageData.packageName}
                       </p>
-                      <p className="flex items-center gap-2 text-travel-secondary font-semibold capitalize mb-2">
+                      <p className="mb-2 flex items-center gap-2 font-semibold capitalize text-travel-secondary">
                         <FaMapMarkerAlt /> {packageData.packageDestination}
                       </p>
-                      {(+packageData.packageDays > 0 || +packageData.packageNights > 0) && (
-                        <p className="flex items-center gap-2 text-gray-600 text-sm">
+                      {(+packageData.packageDays > 0 ||
+                        +packageData.packageNights > 0) && (
+                        <p className="flex items-center gap-2 text-sm text-gray-600">
                           <FaClock />
                           {+packageData.packageDays > 0 &&
                             (+packageData.packageDays > 1
@@ -265,36 +349,34 @@ const Booking = () => {
 
                 <div className="space-y-4">
                   <div>
-                    <label className={label}>
-                      Travel date
-                    </label>
+                    <label className={label}>Travel date</label>
                     <input
                       type="date"
                       min={currentDate || ""}
                       id="date"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-travel-primary/50 focus:ring-4 focus:ring-sky-500/15"
                       onChange={(e) => {
-                        setBookingData({ ...bookingData, date: e.target.value });
+                        setBookingData({
+                          ...bookingData,
+                          date: e.target.value,
+                        });
                       }}
                     />
                   </div>
 
                   <div>
-                    <label className={label}>
-                      Travelers
-                    </label>
+                    <label className={label}>Travelers</label>
                     <div className="flex items-center gap-4">
                       <button
                         type="button"
                         className="h-11 w-11 rounded-xl border-2 border-slate-200 text-lg font-bold text-travel-ink transition hover:border-travel-primary hover:bg-travel-primary hover:text-white disabled:opacity-50"
                         onClick={() => {
                           if (bookingData.persons > 1) {
+                            const next = bookingData.persons - 1;
                             setBookingData({
                               ...bookingData,
-                              persons: bookingData.persons - 1,
-                              totalPrice: packageData.packageDiscountPrice
-                                ? packageData.packageDiscountPrice * (bookingData.persons - 1)
-                                : packageData.packagePrice * (bookingData.persons - 1),
+                              persons: next,
+                              totalPrice: unitPrice * next,
                             });
                           }
                         }}
@@ -302,18 +384,19 @@ const Booking = () => {
                       >
                         -
                       </button>
-                      <span className="text-2xl font-bold w-12 text-center">{bookingData.persons}</span>
+                      <span className="w-12 text-center text-2xl font-bold">
+                        {bookingData.persons}
+                      </span>
                       <button
                         type="button"
                         className="h-11 w-11 rounded-xl border-2 border-slate-200 text-lg font-bold text-travel-ink transition hover:border-travel-primary hover:bg-travel-primary hover:text-white disabled:opacity-50"
                         onClick={() => {
                           if (bookingData.persons < 10) {
+                            const next = bookingData.persons + 1;
                             setBookingData({
                               ...bookingData,
-                              persons: bookingData.persons + 1,
-                              totalPrice: packageData.packageDiscountPrice
-                                ? packageData.packageDiscountPrice * (bookingData.persons + 1)
-                                : packageData.packagePrice * (bookingData.persons + 1),
+                              persons: next,
+                              totalPrice: unitPrice * next,
                             });
                           }
                         }}
@@ -325,19 +408,26 @@ const Booking = () => {
                   </div>
 
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="mb-2 flex items-center justify-between">
                       <span className="text-gray-600">Price per person:</span>
                       {packageData.packageOffer ? (
                         <div className="flex items-center gap-2">
-                          <span className="line-through text-gray-500">
-                            ${packageData.packagePrice}
+                          <span className="text-gray-500 line-through">
+                            ₹
+                            {Number(packageData.packagePrice).toLocaleString(
+                              "en-IN"
+                            )}
                           </span>
                           <span className="font-bold text-travel-success">
-                            ${packageData.packageDiscountPrice}
+                            ₹
+                            {Number(
+                              packageData.packageDiscountPrice
+                            ).toLocaleString("en-IN")}
                           </span>
-                          <span className="bg-travel-accent text-white px-2 py-1 rounded text-xs font-bold">
+                          <span className="rounded bg-travel-accent px-2 py-1 text-xs font-bold text-white">
                             {Math.floor(
-                              ((+packageData.packagePrice - +packageData.packageDiscountPrice) /
+                              ((+packageData.packagePrice -
+                                +packageData.packageDiscountPrice) /
                                 +packageData.packagePrice) *
                                 100
                             )}
@@ -346,68 +436,67 @@ const Booking = () => {
                         </div>
                       ) : (
                         <span className="font-bold text-travel-success">
-                          ${packageData.packagePrice}
+                          ₹
+                          {Number(packageData.packagePrice).toLocaleString(
+                            "en-IN"
+                          )}
                         </span>
                       )}
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                      <span className="text-lg font-bold text-travel-dark">Total Price:</span>
+                    <div className="flex items-center justify-between border-t border-gray-200 pt-2">
+                      <span className="text-lg font-bold text-travel-dark">
+                        Total (INR):
+                      </span>
                       <span className="text-2xl font-bold text-travel-success">
-                        $
-                        {packageData.packageDiscountPrice
-                          ? packageData.packageDiscountPrice * bookingData.persons
-                          : packageData.packagePrice * bookingData.persons}
+                        ₹
+                        {Number(bookingData.totalPrice).toLocaleString(
+                          "en-IN"
+                        )}
                       </span>
                     </div>
                   </div>
 
                   <div className="border-t border-slate-100 pt-6">
-                    <label className={`${label} mb-3`}>
-                      Payment
-                    </label>
-                    {!instance && (
-                      <div className="text-center py-4 text-gray-600">
-                        Loading payment gateway...
-                      </div>
-                    )}
-                    {instance && (
-                      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
-                        <p className="text-sm font-semibold text-amber-900">
-                          Demo only — do not use real card details.
-                        </p>
-                      </div>
-                    )}
-                    {clientToken && (
-                      <div className="space-y-4">
-                        <DropIn
-                          options={{
-                            authorization: clientToken,
-                            paypal: {
-                              flow: "vault",
-                            },
-                          }}
-                          onInstance={(instance) => setInstance(instance)}
-                        />
-                        <button
-                          type="button"
-                          className="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 py-4 font-display text-lg font-bold text-white shadow-glow transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
-                          onClick={handleBookPackage}
-                          disabled={loading || !instance || !currentUser?.address}
-                        >
-                          {loading ? (
-                            <span className="flex items-center justify-center">
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Processing...
-                            </span>
-                          ) : (
-                            "Complete Booking"
-                          )}
-                        </button>
-                      </div>
-                    )}
+                    <label className={`${label} mb-3`}>Payment</label>
+                    <p className="mb-4 text-sm text-slate-600">
+                      You will complete payment on Razorpay’s secure checkout
+                      (cards, UPI, netbanking, wallets — per your Razorpay
+                      dashboard).
+                    </p>
+                    <button
+                      type="button"
+                      className="w-full rounded-2xl bg-gradient-to-r from-sky-600 to-cyan-600 py-4 font-display text-lg font-bold text-white shadow-glow transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={handleBookPackage}
+                      disabled={loading || !currentUser?.address}
+                    >
+                      {loading ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="-ml-1 mr-3 h-5 w-5 animate-spin text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Processing...
+                        </span>
+                      ) : (
+                        "Pay with Razorpay"
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

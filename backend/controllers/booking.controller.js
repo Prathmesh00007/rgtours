@@ -1,36 +1,49 @@
+import crypto from "crypto";
 import Booking from "../models/booking.model.js";
 import Package from "../models/package.model.js";
 import { ObjectId } from "mongodb";
+import Razorpay from "razorpay";
 
-//book package
-export const bookPackage = async (req, res) => {
+function computeBookingTotalInr(validPackage, persons) {
+  const p = Number(persons);
+  const useDiscount =
+    validPackage.packageOffer &&
+    validPackage.packageDiscountPrice != null &&
+    Number(validPackage.packageDiscountPrice) >= 0;
+  const unit = useDiscount
+    ? Number(validPackage.packageDiscountPrice)
+    : Number(validPackage.packagePrice);
+  return unit * p;
+}
+
+// Create Razorpay order (amount in INR, stored as paise by Razorpay)
+export const createRazorpayOrder = async (req, res) => {
   try {
-    // Check if user is authenticated
-    if (!req.user || !req.user.id) {
+    if (!req.user?.id) {
       return res.status(401).send({
         success: false,
         message: "Unauthorized: Please login to book a package!",
       });
     }
 
-    const { packageDetails, buyer, totalPrice, persons, date } = req.body;
+    const { packageId, persons } = req.body;
+    const p = Number(persons);
 
-    if (req.user.id !== buyer) {
-      return res.status(401).send({
+    if (!packageId || !Number.isFinite(p) || p < 1 || p > 10) {
+      return res.status(400).send({
         success: false,
-        message: "You can only buy on your account!",
+        message: "Invalid package or traveler count.",
       });
     }
 
-    if (!packageDetails || !buyer || !totalPrice || !persons || !date) {
-      return res.status(200).send({
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).send({
         success: false,
-        message: "All fields are required!",
+        message: "Payment is not configured on the server.",
       });
     }
 
-    const validPackage = await Package.findById(packageDetails);
-
+    const validPackage = await Package.findById(packageId);
     if (!validPackage) {
       return res.status(404).send({
         success: false,
@@ -38,21 +51,159 @@ export const bookPackage = async (req, res) => {
       });
     }
 
-    const newBooking = await Booking.create(req.body);
+    const totalRupee = computeBookingTotalInr(validPackage, p);
+    if (!Number.isFinite(totalRupee) || totalRupee <= 0) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid package price.",
+      });
+    }
+
+    const amountPaise = Math.round(totalRupee * 100);
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const order = await instance.orders.create({
+      amount: amountPaise,
+      currency: "INR",
+      receipt: `bk_${Date.now()}`,
+      notes: {
+        packageId: String(packageId),
+        buyerId: String(req.user.id),
+        persons: String(p),
+      },
+    });
+
+    return res.status(200).send({
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      success: false,
+      message: "Could not start payment. Try again later.",
+    });
+  }
+};
+
+//book package (after Razorpay payment verified)
+export const bookPackage = async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).send({
+        success: false,
+        message: "Unauthorized: Please login to book a package!",
+      });
+    }
+
+    const {
+      packageDetails,
+      buyer,
+      persons,
+      date,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
+
+    if (String(req.user.id) !== String(buyer)) {
+      return res.status(401).send({
+        success: false,
+        message: "You can only buy on your account!",
+      });
+    }
+
+    if (
+      !packageDetails ||
+      !buyer ||
+      !persons ||
+      !date ||
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res.status(400).send({
+        success: false,
+        message: "All fields are required!",
+      });
+    }
+
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).send({
+        success: false,
+        message: "Payment is not configured on the server.",
+      });
+    }
+
+    const validPackage = await Package.findById(packageDetails);
+    if (!validPackage) {
+      return res.status(404).send({
+        success: false,
+        message: "Package Not Found!",
+      });
+    }
+
+    const totalPrice = computeBookingTotalInr(validPackage, persons);
+    const expectedPaise = Math.round(totalPrice * 100);
+
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSig = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSig !== razorpay_signature) {
+      return res.status(400).send({
+        success: false,
+        message: "Payment verification failed.",
+      });
+    }
+
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const order = await instance.orders.fetch(razorpay_order_id);
+    if (Number(order.amount) !== expectedPaise) {
+      return res.status(400).send({
+        success: false,
+        message: "Payment amount mismatch.",
+      });
+    }
+
+    const newBooking = await Booking.create({
+      packageDetails,
+      buyer,
+      totalPrice,
+      persons,
+      date,
+      status: "Booked",
+    });
 
     if (newBooking) {
       return res.status(201).send({
         success: true,
         message: "Package Booked!",
       });
-    } else {
-      return res.status(500).send({
-        success: false,
-        message: "Something went wrong!",
-      });
     }
+
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong!",
+    });
   } catch (error) {
     console.log(error);
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong!",
+    });
   }
 };
 
