@@ -55,7 +55,7 @@ const Booking = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `${API}/package/get-package-data/${params?.packageId}`
+        `https://rgtours.onrender.com/api/package/get-package-data/${params?.packageId}`
       );
       const data = await res.json();
       if (data?.success) {
@@ -106,7 +106,7 @@ const Booking = () => {
 
     try {
       setLoading(true);
-      const orderRes = await fetch(`${API}/booking/razorpay/create-order`, {
+      const orderRes = await fetch(`https://rgtours.onrender.com/api/booking/razorpay/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -138,7 +138,7 @@ const Booking = () => {
         handler: async function (response) {
           try {
             const res = await fetch(
-              `${API}/booking/book-package/${params?.packageId}`,
+              `https://rgtours.onrender.com/api/booking/book-package/${params?.packageId}`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

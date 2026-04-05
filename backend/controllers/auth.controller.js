@@ -86,10 +86,16 @@ export const loginController = async (req, res) => {
       }
     );
     const { password: pass, ...rest } = validUser._doc; //deselcting password to send user(this will send all data accept password)
+    const crossSite =
+      process.env.NODE_ENV_CUSTOM === "production" ||
+      process.env.COOKIE_CROSS_SITE === "true";
     res
       .cookie("X_TTMS_access_token", token, {
         httpOnly: true,
         maxAge: 4 * 24 * 60 * 60 * 1000,
+        path: "/",
+        sameSite: crossSite ? "none" : "lax",
+        secure: crossSite,
       })
       .status(200)
       .send({
@@ -104,7 +110,14 @@ export const loginController = async (req, res) => {
 
 export const logOutController = (req, res) => {
   try {
-    res.clearCookie("X_TTMS_access_token");
+    const crossSite =
+      process.env.NODE_ENV_CUSTOM === "production" ||
+      process.env.COOKIE_CROSS_SITE === "true";
+    res.clearCookie("X_TTMS_access_token", {
+      path: "/",
+      sameSite: crossSite ? "none" : "lax",
+      secure: crossSite,
+    });
     res.status(200).send({
       success: true,
       message: "Logged out successfully",
