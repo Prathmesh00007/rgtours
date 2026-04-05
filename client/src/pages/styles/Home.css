@@ -1,0 +1,33 @@
+.backaground_image {
+  background: url("../../assets/images/bg_jmg1.jpg") no-repeat center center;
+  background-size: cover;
+  filter: brightness(0.55) saturate(1.05);
+  min-height: 100%;
+}
+
+.offers_img {
+  background: url("../../assets/images/best_offers.jpg") no-repeat center center;
+  background-size: cover;
+  width: 100%;
+  height: 260px;
+  filter: saturate(1.1) contrast(1.05);
+}
+
+@media only screen and (min-width: 550px) {
+  .offers_img {
+    background-position: center -70px;
+  }
+}
+
+@media only screen and (min-width: 800px) {
+  .offers_img {
+    background-position: center -140px;
+  }
+}
+
+@media only screen and (min-width: 1080px) {
+  .offers_img {
+    background-position: center -200px;
+    height: 280px;
+  }
+}
