@@ -14,6 +14,8 @@ const UpdatePackage = () => {
     packageName: "",
     packageDescription: "",
     packageDestination: "",
+    packageTravelStartDate: "",
+    packageTravelEndDate: "",
     packageDays: 1,
     packageNights: 1,
     packageAccommodation: "",
@@ -41,6 +43,9 @@ const UpdatePackage = () => {
           packageName: data?.packageData?.packageName,
           packageDescription: data?.packageData?.packageDescription,
           packageDestination: data?.packageData?.packageDestination,
+          packageTravelStartDate:
+            data?.packageData?.packageTravelStartDate || "",
+          packageTravelEndDate: data?.packageData?.packageTravelEndDate || "",
           packageDays: data?.packageData?.packageDays,
           packageNights: data?.packageData?.packageNights,
           packageAccommodation: data?.packageData?.packageAccommodation,
@@ -64,10 +69,11 @@ const UpdatePackage = () => {
   }, [params.id]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
-    if (e.target.type === "checkbox") {
-      setFormData({ ...formData, [e.target.id]: e.target.checked });
-    }
+    const { id, type, checked, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [id]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleImageSubmit = () => {
@@ -142,6 +148,10 @@ const UpdatePackage = () => {
       alert("Regular Price should be greater than Discount Price!");
       return;
     }
+    if (formData.packageTravelStartDate > formData.packageTravelEndDate) {
+      alert("Travel start date must be on or before travel end date!");
+      return;
+    }
     if (formData.packageOffer === false) {
       setFormData({ ...formData, packageDiscountPrice: 0 });
     }
@@ -154,7 +164,12 @@ const UpdatePackage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          packageDiscountPrice: formData.packageOffer
+            ? formData.packageDiscountPrice
+            : 0,
+        }),
       });
       const data = await res.json();
       if (data?.success === false) {
@@ -225,6 +240,31 @@ const UpdatePackage = () => {
                 className={inputClass}
                 id="packageDestination"
                 value={formData.packageDestination}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="packageTravelStartDate" className={labelClass}>
+                Travel start date
+              </label>
+              <input
+                type="date"
+                className={inputClass}
+                id="packageTravelStartDate"
+                value={formData.packageTravelStartDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="packageTravelEndDate" className={labelClass}>
+                Travel end date
+              </label>
+              <input
+                type="date"
+                className={inputClass}
+                id="packageTravelEndDate"
+                value={formData.packageTravelEndDate}
                 onChange={handleChange}
               />
             </div>

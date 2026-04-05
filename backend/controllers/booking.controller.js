@@ -4,6 +4,8 @@ import Package from "../models/package.model.js";
 import { ObjectId } from "mongodb";
 import Razorpay from "razorpay";
 
+const todayYmd = () => new Date().toISOString().slice(0, 10);
+
 function computeBookingTotalInr(validPackage, persons) {
   const p = Number(persons);
   const useDiscount =
@@ -106,7 +108,6 @@ export const bookPackage = async (req, res) => {
       packageDetails,
       buyer,
       persons,
-      date,
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
@@ -123,7 +124,6 @@ export const bookPackage = async (req, res) => {
       !packageDetails ||
       !buyer ||
       !persons ||
-      !date ||
       !razorpay_order_id ||
       !razorpay_payment_id ||
       !razorpay_signature
@@ -146,6 +146,16 @@ export const bookPackage = async (req, res) => {
       return res.status(404).send({
         success: false,
         message: "Package Not Found!",
+      });
+    }
+
+    const travelStart = validPackage.packageTravelStartDate;
+    const travelEnd = validPackage.packageTravelEndDate;
+    if (!travelStart || !travelEnd || travelStart > travelEnd) {
+      return res.status(400).send({
+        success: false,
+        message:
+          "This package has no valid travel dates. Ask an admin to set the trip date range.",
       });
     }
 
@@ -183,7 +193,8 @@ export const bookPackage = async (req, res) => {
       buyer,
       totalPrice,
       persons,
-      date,
+      date: travelEnd,
+      travelStartDate: travelStart,
       status: "Booked",
     });
 
@@ -212,7 +223,7 @@ export const getCurrentBookings = async (req, res) => {
   try {
     const searchTerm = req?.query?.searchTerm || "";
     const bookings = await Booking.find({
-      date: { $gt: new Date().toISOString() },
+      date: { $gte: todayYmd() },
       status: "Booked",
     })
       .populate("packageDetails")
@@ -300,7 +311,7 @@ export const getUserCurrentBookings = async (req, res) => {
     const searchTerm = req?.query?.searchTerm || "";
     const bookings = await Booking.find({
       buyer: new ObjectId(req?.params?.id),
-      date: { $gt: new Date().toISOString() },
+      date: { $gte: todayYmd() },
       status: "Booked",
     })
       // .populate("packageDetails")

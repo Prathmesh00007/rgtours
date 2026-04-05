@@ -24,6 +24,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    travelStartDate: {
+      type: String,
+      default: "",
+    },
     status: {
       type: String,
       default: "Booked",

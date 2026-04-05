@@ -3,8 +3,6 @@ import { FaClock, FaMapMarkerAlt } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
 
-const API = "/api";
-
 function loadRazorpayScript() {
   return new Promise((resolve) => {
     if (window.Razorpay) {
@@ -39,6 +37,8 @@ const Booking = () => {
     packageRating: 0,
     packageTotalRatings: 0,
     packageImages: [],
+    packageTravelStartDate: "",
+    packageTravelEndDate: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -47,9 +47,7 @@ const Booking = () => {
     packageDetails: null,
     buyer: null,
     persons: 1,
-    date: null,
   });
-  const [currentDate, setCurrentDate] = useState("");
 
   const getPackageData = async () => {
     try {
@@ -75,6 +73,8 @@ const Booking = () => {
           packageRating: data?.packageData?.packageRating,
           packageTotalRatings: data?.packageData?.packageTotalRatings,
           packageImages: data?.packageData?.packageImages,
+          packageTravelStartDate: data?.packageData?.packageTravelStartDate || "",
+          packageTravelEndDate: data?.packageData?.packageTravelEndDate || "",
         });
         setLoading(false);
       } else {
@@ -91,10 +91,18 @@ const Booking = () => {
       !bookingData.packageDetails ||
       !bookingData.buyer ||
       bookingData.totalPrice <= 0 ||
-      bookingData.persons <= 0 ||
-      !bookingData.date
+      bookingData.persons <= 0
     ) {
       alert("All fields are required!");
+      return;
+    }
+    if (
+      !packageData.packageTravelStartDate ||
+      !packageData.packageTravelEndDate
+    ) {
+      alert(
+        "This package does not have travel dates yet. Please choose another package or contact support."
+      );
       return;
     }
 
@@ -147,7 +155,6 @@ const Booking = () => {
                   packageDetails: bookingData.packageDetails,
                   buyer: bookingData.buyer,
                   persons: bookingData.persons,
-                  date: bookingData.date,
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
@@ -192,6 +199,8 @@ const Booking = () => {
     bookingData,
     params?.packageId,
     packageData.packageName,
+    packageData.packageTravelStartDate,
+    packageData.packageTravelEndDate,
     currentUser,
     navigate,
   ]);
@@ -200,9 +209,6 @@ const Booking = () => {
     if (params?.packageId) {
       getPackageData();
     }
-    const date = new Date().toISOString().substring(0, 10);
-    const d = date.substring(0, 8) + (parseInt(date.substring(8), 10) + 1);
-    setCurrentDate(d);
   }, [params?.packageId]);
 
   useEffect(() => {
@@ -348,20 +354,19 @@ const Booking = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className={label}>Travel date</label>
-                    <input
-                      type="date"
-                      min={currentDate || ""}
-                      id="date"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-travel-primary/50 focus:ring-4 focus:ring-sky-500/15"
-                      onChange={(e) => {
-                        setBookingData({
-                          ...bookingData,
-                          date: e.target.value,
-                        });
-                      }}
-                    />
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p className={label}>Trip dates (set by admin)</p>
+                    {packageData.packageTravelStartDate &&
+                    packageData.packageTravelEndDate ? (
+                      <p className="text-base font-semibold text-travel-ink">
+                        {packageData.packageTravelStartDate} →{" "}
+                        {packageData.packageTravelEndDate}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-amber-800">
+                        Travel dates are not set for this package yet.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -467,7 +472,12 @@ const Booking = () => {
                       type="button"
                       className="w-full rounded-2xl bg-gradient-to-r from-sky-600 to-cyan-600 py-4 font-display text-lg font-bold text-white shadow-glow transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={handleBookPackage}
-                      disabled={loading || !currentUser?.address}
+                      disabled={
+                        loading ||
+                        !currentUser?.address ||
+                        !packageData.packageTravelStartDate ||
+                        !packageData.packageTravelEndDate
+                      }
                     >
                       {loading ? (
                         <span className="flex items-center justify-center">

@@ -14,6 +14,14 @@ const packageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    packageTravelStartDate: {
+      type: String,
+      default: "",
+    },
+    packageTravelEndDate: {
+      type: String,
+      default: "",
+    },
     packageDays: {
       type: Number,
       required: true,

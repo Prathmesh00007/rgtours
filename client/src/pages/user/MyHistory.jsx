@@ -13,7 +13,8 @@ const MyHistory = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://rgtours.onrender.com/api/booking/get-allUserBookings/${currentUser?._id}?searchTerm=${search}`
+        `https://rgtours.onrender.com/api/booking/get-allUserBookings/${currentUser?._id}?searchTerm=${search}`,
+        { credentials: "include" }
       );
       const data = await res.json();
       if (data?.success) {
@@ -30,8 +31,10 @@ const MyHistory = () => {
   };
 
   useEffect(() => {
-    getAllBookings();
-  }, [search]);
+    if (currentUser?._id) {
+      getAllBookings();
+    }
+  }, [search, currentUser?._id]);
 
   const handleHistoryDelete = async (id) => {
     try {
@@ -40,6 +43,8 @@ const MyHistory = () => {
         `https://rgtours.onrender.com/api/booking/delete-booking-history/${id}/${currentUser._id}`,
         {
           method: "DELETE",
+          credentials: "include",
+          
         }
       );
       const data = await res.json();
@@ -110,7 +115,18 @@ const MyHistory = () => {
       {!loading && !error && allBookings && allBookings.length > 0 && (
         <div className="space-y-4">
           {allBookings.map((booking, i) => {
-            const isPast = new Date(booking?.date).getTime() < new Date().getTime();
+            const today = new Date().toISOString().slice(0, 10);
+            const tripEndRaw = booking?.date ? String(booking.date).slice(0, 10) : "";
+            const isPastYmd =
+              tripEndRaw &&
+              /^\d{4}-\d{2}-\d{2}$/.test(tripEndRaw) &&
+              tripEndRaw < today;
+            const isPastLegacy =
+              !isPastYmd &&
+              booking?.date &&
+              !Number.isNaN(new Date(booking.date).getTime()) &&
+              new Date(booking.date).getTime() < Date.now();
+            const isPast = isPastYmd || isPastLegacy;
             const isCancelled = booking?.status === "Cancelled";
             
             return (
@@ -167,7 +183,11 @@ const MyHistory = () => {
                         <svg className="w-4 h-4 text-travel-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span className="font-semibold">{booking?.date}</span>
+                        <span className="font-semibold">
+                          {booking?.travelStartDate
+                            ? `${booking.travelStartDate} – ${booking.date}`
+                            : booking?.date}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-travel-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

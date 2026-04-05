@@ -14,7 +14,8 @@ const MyBookings = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://rgtours.onrender.com/api/booking/get-UserCurrentBookings/${currentUser?._id}?searchTerm=${searchTerm}`
+        `https://rgtours.onrender.com/api/booking/get-UserCurrentBookings/${currentUser?._id}?searchTerm=${searchTerm}`,
+        { credentials: "include" }
       );
       const data = await res.json();
       if (data?.success) {
@@ -31,8 +32,10 @@ const MyBookings = () => {
   };
 
   useEffect(() => {
-    getAllBookings();
-  }, [searchTerm]);
+    if (currentUser?._id) {
+      getAllBookings();
+    }
+  }, [searchTerm, currentUser?._id]);
 
   const handleCancel = async (id) => {
     try {
@@ -41,6 +44,7 @@ const MyBookings = () => {
         `https://rgtours.onrender.com/api/booking/cancel-booking/${id}/${currentUser._id}`,
         {
           method: "POST",
+          credentials: "include",
         }
       );
       const data = await res.json();
@@ -148,7 +152,11 @@ const MyBookings = () => {
                       <svg className="w-4 h-4 text-travel-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="font-semibold">{booking?.date}</span>
+                      <span className="font-semibold">
+                        {booking?.travelStartDate
+                          ? `${booking.travelStartDate} – ${booking.date}`
+                          : booking?.date}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-travel-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,11 +4,10 @@ import User from "../models/user.model.js";
 export const requireSignIn = async (req, res, next) => {
   if (req?.cookies?.X_TTMS_access_token) {
     const token = await req.cookies.X_TTMS_access_token;
-    console.log(token);
     if (!token)
       return res.status(401).send({
         success: false,
-        message: "Unautorized: Token not provided!",
+        message: "Unauthorized: Token not provided!",
       });
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
@@ -24,7 +23,7 @@ export const requireSignIn = async (req, res, next) => {
   } else {
     return res.status(401).send({
       success: false,
-      message: "Unautorized: Token not provided!",
+      message: "Unauthorized: Token not provided!",
     });
   }
 };

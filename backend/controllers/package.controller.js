@@ -9,6 +9,8 @@ export const createPackage = async (req, res) => {
       packageName,
       packageDescription,
       packageDestination,
+      packageTravelStartDate,
+      packageTravelEndDate,
       packageDays,
       packageNights,
       packageAccommodation,
@@ -25,15 +27,23 @@ export const createPackage = async (req, res) => {
       !packageName ||
       !packageDescription ||
       !packageDestination ||
+      !packageTravelStartDate ||
+      !packageTravelEndDate ||
       !packageAccommodation ||
       !packageTransportation ||
       !packageMeals ||
       !packageActivities ||
-      !packageOffer === "" 
+      !packageOffer === ""
     ) {
       return res.status(200).send({
         success: false,
         message: "All fields are required!",
+      });
+    }
+    if (packageTravelStartDate > packageTravelEndDate) {
+      return res.status(200).send({
+        success: false,
+        message: "Travel start date must be on or before travel end date!",
       });
     }
     if (packagePrice < packageDiscountPrice) {
@@ -142,6 +152,18 @@ export const updatePackage = async (req, res) => {
         success: false,
         message: "Package not found!",
       });
+
+    const { packageTravelStartDate, packageTravelEndDate } = req.body;
+    if (
+      packageTravelStartDate &&
+      packageTravelEndDate &&
+      packageTravelStartDate > packageTravelEndDate
+    ) {
+      return res.status(200).send({
+        success: false,
+        message: "Travel start date must be on or before travel end date!",
+      });
+    }
 
     const updatedPackage = await Package.findByIdAndUpdate(
       req.params.id,

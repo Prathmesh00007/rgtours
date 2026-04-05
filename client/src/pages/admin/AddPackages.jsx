@@ -11,6 +11,8 @@ const AddPackages = () => {
     packageName: "",
     packageDescription: "",
     packageDestination: "",
+    packageTravelStartDate: "",
+    packageTravelEndDate: "",
     packageDays: 1,
     packageNights: 1,
     packageAccommodation: "",
@@ -88,6 +90,8 @@ const AddPackages = () => {
       formData.packageName === "" ||
       formData.packageDescription === "" ||
       formData.packageDestination === "" ||
+      formData.packageTravelStartDate === "" ||
+      formData.packageTravelEndDate === "" ||
       formData.packageAccommodation === "" ||
       formData.packageTransportation === "" ||
       formData.packageMeals === "" ||
@@ -105,6 +109,10 @@ const AddPackages = () => {
       alert("Regular Price should be greater than Discount Price!");
       return;
     }
+    if (formData.packageTravelStartDate > formData.packageTravelEndDate) {
+      alert("Travel start date must be on or before travel end date!");
+      return;
+    }
     if (formData.packageOffer === false) {
       setFormData({ ...formData, packageDiscountPrice: 0 });
     }
@@ -117,7 +125,12 @@ const AddPackages = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          packageDiscountPrice: formData.packageOffer
+            ? formData.packageDiscountPrice
+            : 0,
+        }),
       });
       const data = await res.json();
       if (data?.success === false) {
@@ -202,6 +215,31 @@ const AddPackages = () => {
               className={inputClass}
               id="packageDestination"
               value={formData.packageDestination}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="packageTravelStartDate" className={labelClass}>
+              Travel start date
+            </label>
+            <input
+              type="date"
+              className={inputClass}
+              id="packageTravelStartDate"
+              value={formData.packageTravelStartDate}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <label htmlFor="packageTravelEndDate" className={labelClass}>
+              Travel end date
+            </label>
+            <input
+              type="date"
+              className={inputClass}
+              id="packageTravelEndDate"
+              value={formData.packageTravelEndDate}
               onChange={handleChange}
             />
           </div>

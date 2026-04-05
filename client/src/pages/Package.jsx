@@ -45,6 +45,8 @@ const Package = () => {
     packageRating: 0,
     packageTotalRatings: 0,
     packageImages: [],
+    packageTravelStartDate: "",
+    packageTravelEndDate: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -82,6 +84,8 @@ const Package = () => {
           packageRating: data?.packageData?.packageRating,
           packageTotalRatings: data?.packageData?.packageTotalRatings,
           packageImages: data?.packageData?.packageImages,
+          packageTravelStartDate: data?.packageData?.packageTravelStartDate || "",
+          packageTravelEndDate: data?.packageData?.packageTravelEndDate || "",
         });
         setLoading(false);
       } else {
@@ -496,6 +500,17 @@ const Package = () => {
                       </p>
                     )}
                     <p className="mt-2 text-sm text-white/85">per person</p>
+                    {packageData.packageTravelStartDate &&
+                      packageData.packageTravelEndDate && (
+                        <p className="mt-4 border-t border-white/20 pt-4 text-sm text-white/90">
+                          <span className="font-bold uppercase tracking-wider text-white/70">
+                            Trip dates
+                          </span>
+                          <br />
+                          {packageData.packageTravelStartDate} →{" "}
+                          {packageData.packageTravelEndDate}
+                        </p>
+                      )}
                   </div>
 
                   <div className="space-y-5 p-6">

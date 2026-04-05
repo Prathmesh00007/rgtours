@@ -123,7 +123,11 @@ const Payments = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{booking?.buyer?.username}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{booking?.buyer?.email}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{booking?.date}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {booking?.travelStartDate
+                        ? `${booking.travelStartDate} – ${booking.date}`
+                        : booking?.date}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <span className="font-bold text-travel-success text-lg">
                         ₹
