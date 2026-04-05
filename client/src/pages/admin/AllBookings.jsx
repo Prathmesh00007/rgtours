@@ -15,7 +15,8 @@ const AllBookings = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://rgtours.onrender.com/api/booking/get-currentBookings?searchTerm=${searchTerm}`
+        `https://rgtours.onrender.com/api/booking/get-currentBookings?searchTerm=${searchTerm}`,
+        { credentials: "include" }
       );
       const data = await res.json();
       if (data?.success) {

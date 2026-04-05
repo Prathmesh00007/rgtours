@@ -13,7 +13,8 @@ const History = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://rgtours.onrender.com/api/booking/get-allBookings?searchTerm=${search}`
+        `https://rgtours.onrender.com/api/booking/get-allBookings?searchTerm=${search}`,
+        { credentials: "include" }
       );
       const data = await res.json();
       if (data?.success) {
