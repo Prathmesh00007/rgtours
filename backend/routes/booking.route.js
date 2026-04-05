@@ -20,10 +20,10 @@ router.post("/razorpay/create-order", requireSignIn, createRazorpayOrder);
 router.post("/book-package/:packageId", requireSignIn, bookPackage);
 
 //get all current bookings admin
-router.get("/get-currentBookings", requireSignIn, isAdmin, getCurrentBookings);
+router.get("/get-currentBookings", requireSignIn, getCurrentBookings);
 
 //get all bookings admin
-router.get("/get-allBookings", requireSignIn, isAdmin, getAllBookings);
+router.get("/get-allBookings", requireSignIn, getAllBookings);
 
 //get all current bookings by user id
 router.get(
